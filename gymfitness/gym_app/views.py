@@ -3,13 +3,47 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate,login,logout
 
-from gym_app.models import Contact
+from gym_app.models import Contact,MembershipPlan,Trainer,Enrollment,Attendance,Gallery
 
 
 
 # Create your views here.
 def index(request):
     return render(request, 'index.html')
+
+def gallery(request):
+    posts=Gallery.objects.all()
+    context={"posts":posts}
+    return render(request,"gallery.html",context)
+
+def attendance(request):
+    if not request.user.is_authenticated:
+        messages.warning(request,"Please Login and Try Again")
+        return redirect('/login')
+    SelectTrainer=Trainer.objects.all()
+    context={"SelectTrainer":SelectTrainer}
+    if request.method=="POST":
+        phonenumber=request.POST.get('PhoneNumber')
+        Login=request.POST.get('logintime')
+        Logout=request.POST.get('loginout')
+        SelectWorkout=request.POST.get('workout')
+        TrainedBy=request.POST.get('trainer')
+        query=Attendance(phonenumber=phonenumber,Login=Login,Logout=Logout,SelectWorkout=SelectWorkout,TrainedBy=TrainedBy)
+        query.save()
+        messages.warning(request,"Attendace Applied Success")
+        return redirect('/attendance')
+    return render(request,"attendance.html",context)
+
+def profile(request):
+    if not request.user.is_authenticated:
+        messages.warning(request,"Please Login and Try Again")
+        return redirect('/login')
+    user_phone=request.user
+    posts=Enrollment.objects.filter(PhoneNumber=user_phone)
+    attendance=Attendance.objects.filter(phonenumber=user_phone)
+    print(posts)
+    context={"posts":posts,"attendance":attendance}
+    return render(request,"profile.html",context)    
 
 
 def signup(request):
@@ -73,3 +107,30 @@ def contact(request):
         return redirect('/contact')
         
     return render(request,"contact.html")
+
+def enroll(request):
+    if not request.user.is_authenticated:
+        messages.warning(request,"Please Login and Try Again")
+        return redirect('/login')
+
+    Membership=MembershipPlan.objects.all()
+    SelectTrainer=Trainer.objects.all()
+    context={"Membership":Membership,"SelectTrainer":SelectTrainer}
+    if request.method=="POST":
+        FullName=request.POST.get('FullName')
+        email=request.POST.get('email')
+        gender=request.POST.get('gender')
+        PhoneNumber=request.POST.get('PhoneNumber')
+        DOB=request.POST.get('DOB')
+        member=request.POST.get('member')
+        trainer=request.POST.get('trainer')
+        reference=request.POST.get('reference')
+        address=request.POST.get('address')
+        query=Enrollment(FullName=FullName,Email=email,Gender=gender,PhoneNumber=PhoneNumber,DOB=DOB,SelectMembershipplan=member,SelectTrainer=trainer,Reference=reference,Address=address)
+        query.save()
+        messages.success(request,"Thanks For Enrollment")
+        return redirect('/join')
+
+
+
+    return render(request,"enroll.html",context)    
